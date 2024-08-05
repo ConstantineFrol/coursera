@@ -1,0 +1,7 @@
+import pandas as pd
+
+# Load the DataFrame from the CSV file
+df = pd.read_csv('tesla_revenue.csv')
+
+# Print the last five rows of the DataFrame
+print(df.tail())
