@@ -1,0 +1,17 @@
+import matplotlib.pyplot as plt
+from datetime import datetime
+
+def make_graph(dataframe):
+    dataframe['Date'] = pd.to_datetime(dataframe['Date'])
+    dataframe['Revenue'] = pd.to_numeric(dataframe['Revenue'].replace('[\$,]', '', regex=True))
+    
+    # Plot the data
+    plt.figure(figsize=(10, 5))
+    plt.plot(dataframe['Date'], dataframe['Revenue'], marker='o', linestyle='-', color='blue')
+    plt.title('Tesla Revenue Over Time')
+    plt.xlabel('Date')
+    plt.ylabel('Revenue (in billions)')
+    plt.grid(True)
+    plt.show()
+
+make_graph(df)
