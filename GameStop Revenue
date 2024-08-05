@@ -1,0 +1,78 @@
+from selenium import webdriver
+from selenium.webdriver.firefox.service import Service
+from selenium.webdriver.firefox.options import Options
+from bs4 import BeautifulSoup
+import pandas as pd
+import matplotlib.pyplot as plt
+from datetime import datetime
+import time
+
+
+firefox_options = Options()
+firefox_options.add_argument("--headless")
+
+
+geckodriver_path = '/home/kosmas/Documents/Jupyter/data/Firefox_driver/32/geckodriver-v0.34.0-linux32/geckodriver'
+service = Service(executable_path=geckodriver_path)
+driver = webdriver.Firefox(service=service, options=firefox_options)
+
+try:
+
+    driver.get('https://www.macrotrends.net/stocks/charts/GME/gamestop/revenue')
+    time.sleep(5)
+    
+
+    page_source = driver.page_source
+    soup = BeautifulSoup(page_source, 'html.parser')
+
+    print("Page title is:", driver.title)
+    
+    # Find all tables on the page
+    tables = soup.find_all('table')
+    
+    if len(tables) > 1:
+        second_table = tables[1]
+        
+        # Define table headers explicitly
+        headers = ['Date', 'Revenue']
+        
+        # Extract rows from the table
+        rows = []
+        for row in second_table.find_all('tr')[1:]:  
+            cells = row.find_all('td')
+            row_data = [cell.text.strip() for cell in cells]
+            if len(row_data) == len(headers):
+                rows.append(row_data)
+        
+        # Create a DataFrame from the extracted data
+        df = pd.DataFrame(rows, columns=headers)
+        
+        # Save the DataFrame to a CSV file
+        df.to_csv('gamestop_revenue.csv', index=False)
+        
+        # Print the first five rows of the DataFrame
+        print(df.head(5))
+    else:
+        print("Second table not found.")
+        
+except Exception as e:
+    print(f"An error occurred: {e}")
+    
+finally:
+    driver.quit()
+
+def make_graph(dataframe):
+
+    dataframe['Date'] = pd.to_datetime(dataframe['Date'])
+    dataframe['Revenue'] = pd.to_numeric(dataframe['Revenue'].replace('[\$,]', '', regex=True))
+    
+    # Plot the data
+    plt.figure(figsize=(10, 5))
+    plt.plot(dataframe['Date'], dataframe['Revenue'], marker='o', linestyle='-', color='green')
+    plt.title('GameStop Revenue Over Time')
+    plt.xlabel('Date')
+    plt.ylabel('Revenue (in billions)')
+    plt.grid(True)
+    plt.show()
+    
+make_graph(df)
