@@ -1,0 +1,61 @@
+from selenium import webdriver
+from selenium.webdriver.firefox.service import Service
+from selenium.webdriver.firefox.options import Options
+from bs4 import BeautifulSoup
+import pandas as pd
+import time
+
+firefox_options = Options()
+firefox_options.add_argument("--headless")
+geckodriver_path = '/home/kosmas/Documents/Jupyter/data/Firefox_driver/32/geckodriver-v0.34.0-linux32/geckodriver'
+service = Service(executable_path=geckodriver_path)
+driver = webdriver.Firefox(service=service, options=firefox_options)
+
+try:
+    driver.get('https://www.macrotrends.net/stocks/charts/TSLA/tesla/revenue')
+    time.sleep(5) 
+    
+    # Get the page source
+    page_source = driver.page_source
+    
+    # Parse the page source with Beautiful Soup
+    soup = BeautifulSoup(page_source, 'html.parser')
+    
+    # Print the page title to confirm navigation
+    print("Page title is:", driver.title)
+    
+    # Find all tables on the page
+    tables = soup.find_all('table')
+    
+    # Ensure there is a second table
+    if len(tables) > 1:
+        second_table = tables[1]
+        
+        # Extract table headers
+        headers = ['Date', 'Revenue'] 
+        
+        # Get table rows
+        rows = []
+        for row in second_table.find_all('tr')[1:]: 
+            cells = row.find_all('td')
+            row_data = [cell.text.strip() for cell in cells]
+            if len(row_data) == len(headers):
+                rows.append(row_data)
+        
+        # Create a new DataFrame
+        df = pd.DataFrame(rows, columns=headers)
+        
+        # Reset the index of the DataFrame
+        df.reset_index(drop=True, inplace=True)
+        
+        # Save the DataFrame to a CSV file
+        df.to_csv('tesla_revenue.csv', index=False)
+        
+        # Print the first five rows of the DataFrame
+        print(df.head(5))
+    else:
+        print("Second table not found.")
+        
+finally:
+    # Close the driver
+    driver.quit()
